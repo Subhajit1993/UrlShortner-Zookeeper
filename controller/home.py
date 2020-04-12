@@ -3,12 +3,13 @@ from sqlalchemy.exc import SQLAlchemyError, IntegrityError, InvalidRequestError
 from app import db
 from models.users import User
 from models.urls import Url
+from app import zk
 import hashlib
 
 db.create_all()
 db.session.commit()
 
-increment_id = 100000
+fixed_increment_id = 1000000
 
 BASE62 = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
@@ -63,26 +64,31 @@ def index():
     return resp
 
 
+def get_seq():
+    global fixed_increment_id
+    seq = zk.create("/node", b"a value", sequence=True)
+    seq = seq[5:]
+    seq = (int(seq))
+    seq = seq + fixed_increment_id
+    return seq
+
+
 def get_url(short_code):
     url = Url.query.get(short_code)
     return redirect(url.original_url, code=302)
 
 
 def add_url():
-    global increment_id
     post_data = request.data
     post_data_dict = json.loads(post_data)
     original_url = post_data_dict.get('original_url')
-    encoded_id = (encode(increment_id))
+    seq = get_seq()
+    encoded_id = (encode(seq))
     short_code = encoded_id
     db.session.add(Url(original_url=original_url, short_code=short_code))
     try:
         db.session.commit()
         final_url = "http://localhost:5000/" + short_code
-    except IntegrityError as e:
-        db.session.rollback()
-        existing_url = Url.query.filter_by(original_url=original_url).first()
-        final_url = "http://localhost:5000/" + existing_url.short_code
     except Exception as e:
         db.session.rollback()
         return Response(
@@ -92,7 +98,6 @@ def add_url():
         )
     finally:
         db.session.close()
-    increment_id = increment_id + 1
     resp = Response(
         json.dumps(final_url),
         status=200,
