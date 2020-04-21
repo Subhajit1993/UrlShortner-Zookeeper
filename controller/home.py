@@ -5,6 +5,8 @@ from models.users import User
 from models.urls import Url
 from app import zk
 import hashlib
+from app import redis_client
+
 
 db.create_all()
 db.session.commit()
@@ -52,12 +54,9 @@ def decode(string, alphabet=BASE62):
 
 
 def index():
-    db.session.add(User(name="Flask", email="example@example.com"))
-    db.session.commit()
+    a = redis_client.get('potato')
     resp = Response(
-        json.dumps({
-
-        }),
+        json.dumps(a),
         status=200,
         mimetype='application/json'
     )
