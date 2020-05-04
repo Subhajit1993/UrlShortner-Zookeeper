@@ -1,0 +1,2 @@
+docker run -p 5000:5000 -v /usr/src/app/venv -v C:\Users\user\PycharmProjects\UrlShortner-Zookeeper:/usr/src/app url-shortner
+

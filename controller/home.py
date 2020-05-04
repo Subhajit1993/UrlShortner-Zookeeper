@@ -56,7 +56,7 @@ def decode(string, alphabet=BASE62):
 def index():
     a = redis_client.get('potato')
     resp = Response(
-        json.dumps(a),
+        json.dumps("HELLO"),
         status=200,
         mimetype='application/json'
     )
